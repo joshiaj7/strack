@@ -1,0 +1,50 @@
+version: "2.4"
+
+services:
+  strack_app:
+    container_name: strack_server
+    image: strack_server:latest
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+    ports:
+      - 3000:3000
+    network_mode: host
+    restart: on-failure
+    depends_on:
+      item_db:
+        condition: service_healthy
+    env_file: ./backend/.env 
+  strack_server:
+    container_name: strack_server
+    image: strack_server:latest
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    ports:
+      - 8080:8080
+    network_mode: host
+    restart: on-failure
+    depends_on:
+      item_db:
+        condition: service_healthy
+    env_file: ./backend/.env 
+  strack_db:
+    container_name: strack_db
+    image: postgres:13.0-alpine
+    environment:
+      POSTGRES_PASSWORD: password123
+    ports:
+      - 5432:5432
+    network_mode: host
+    volumes:
+      - pgdata:/var/lib/postgres/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:
